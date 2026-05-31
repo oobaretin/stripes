@@ -1,4 +1,3 @@
-# Allow crawlers. Add your sitemap URL after deploy, e.g.
-# Sitemap: https://your-domain.com/sitemap.xml
+# Dev copy — production robots.txt is generated at build time (see scripts/generate-sitemap.mjs).
 User-agent: *
 Allow: /
