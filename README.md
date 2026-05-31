@@ -67,19 +67,38 @@ stripes/
 
 ## Deploy on Vercel
 
-**Recommended:** one frontend project, repo root as Root Directory.
+### Recommended: Root Directory = `frontend`
+
+In **Settings → General → Root Directory**, enter exactly:
+
+```text
+frontend
+```
+
+Do **not** type `.(repo root)` or other labels — only the folder name `frontend`.
+
+**Settings → Build & Development** (overrides on):
 
 | Setting | Value |
 |---------|--------|
-| Root Directory | `.` (repository root) |
 | Framework | Vite |
+| Install Command | `npm install` |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
+
+Uses `frontend/vercel.json`. Redeploy with cache disabled.
+
+### Alternative: repository root
+
+Leave **Root Directory empty** (blank), or set it to a single dot `.` only — not `.(repo root)`.
+
+| Setting | Value |
+|---------|--------|
 | Build Command | `npm run build` |
 | Output Directory | `frontend/dist` |
 | Install Command | `npm install` |
 
-The repo root `vercel.json` matches these settings.
-
-**Alternative:** Root Directory = `frontend` — uses `frontend/vercel.json` instead.
+Uses the root `vercel.json`.
 
 ### Optional environment variable
 
