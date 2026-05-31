@@ -3,15 +3,12 @@
   "version": "1.0.0",
   "description": "Striply — Local-first tools for diabetic test strip resale (browser storage)",
   "private": true,
-  "workspaces": [
-    "frontend"
-  ],
   "scripts": {
-    "dev": "npm run dev -w teststrip-frontend",
-    "build": "npm run build -w teststrip-frontend",
-    "preview": "npm run preview -w teststrip-frontend"
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "preview": "npm run preview --prefix frontend"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "20.x"
   }
 }
