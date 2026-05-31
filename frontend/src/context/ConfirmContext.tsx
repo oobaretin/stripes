@@ -34,8 +34,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       {children}
       {state?.open && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-          <button type="button" className="absolute inset-0 bg-slate-900/50" aria-label="Cancel" onClick={() => close(false)} />
-          <div className="relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+          <button type="button" className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" aria-label="Cancel" onClick={() => close(false)} />
+          <div className="relative w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
             <h2 className="text-lg font-semibold text-slate-900">{state.title}</h2>
             <p className="mt-2 text-sm text-slate-600">{state.message}</p>
             <div className="mt-6 flex justify-end gap-3">

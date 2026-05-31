@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SK, loadBuyersOrSeed, saveJson } from '../lib/localData';
 import { SEED_BUYERS } from '../lib/seedBuyersData';
-import { Plus, Search, Edit, Trash2, Star, ExternalLink } from 'lucide-react';
+import { Plus, Edit, Trash2, Star, ExternalLink } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
+import SearchField from '../components/SearchField';
+import IconButton from '../components/IconButton';
 import { useConfirm } from '../context/ConfirmContext';
 import { useToast } from '../context/ToastContext';
 
@@ -148,7 +150,7 @@ export default function Buyers() {
             <button
               type="button"
               onClick={handleAddDefaultBuyers}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              className="btn-secondary"
             >
               Add default buyers
             </button>
@@ -158,7 +160,7 @@ export default function Buyers() {
                 resetForm();
                 setShowModal(true);
               }}
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+              className="btn-primary"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Buyer
@@ -168,16 +170,7 @@ export default function Buyers() {
       />
 
       <div className="mb-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search buyers..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-          />
-        </div>
+        <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Search buyers…" />
       </div>
 
       {buyers.length === 0 ? (
@@ -211,53 +204,52 @@ export default function Buyers() {
       ) : filtered.length === 0 ? (
         <EmptyState title="No matches" description="Try a different search term." />
       ) : (
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul className="divide-y divide-gray-200">
+      <div className="card">
+        <ul className="divide-y divide-slate-100">
           {filtered.map((buyer) => (
-              <li key={buyer.id}>
-                <div className="px-4 py-4 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
+              <li key={buyer.id} className="card-body transition-colors hover:bg-slate-50/80">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-semibold text-slate-900">
                           {buyer.firstName} {buyer.lastName}
                         </p>
                         {buyer.isPreferred && (
                           <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                         )}
                       </div>
-                      <p className="text-sm text-gray-500">{buyer.phone}</p>
+                      <p className="mt-0.5 text-sm text-slate-500">{buyer.phone}</p>
                       {buyer.paymentEmail && (
-                        <p className="text-sm text-gray-500">Payment: {buyer.paymentEmail}</p>
+                        <p className="text-sm text-slate-500">Payment: {buyer.paymentEmail}</p>
                       )}
                       {buyer.bestFormOfContact && (
-                        <p className="text-xs text-gray-400">Contact: {buyer.bestFormOfContact}</p>
+                        <p className="text-xs text-slate-400">Contact: {buyer.bestFormOfContact}</p>
                       )}
                       {buyer.paymentMethods && (
-                        <p className="text-xs text-gray-400">Payments: {buyer.paymentMethods}</p>
+                        <p className="text-xs text-slate-400">Payments: {buyer.paymentMethods}</p>
                       )}
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex shrink-0 items-center gap-1">
                       {buyer.priceSheetUrl && buyer.priceSheetUrl.startsWith('http') && (
                         <a
                           href={buyer.priceSheetUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-primary-600 hover:text-primary-900"
-                          title="Price Sheet"
+                          className="icon-btn icon-btn-default"
+                          title="Price sheet"
+                          aria-label="Open price sheet"
                         >
-                          <ExternalLink className="h-5 w-5" />
+                          <ExternalLink className="h-4 w-4" />
                         </a>
                       )}
-                      <button onClick={() => handleEdit(buyer)} className="text-primary-600 hover:text-primary-900">
-                        <Edit className="h-5 w-5" />
-                      </button>
-                      <button onClick={() => handleDelete(buyer.id)} className="text-red-600 hover:text-red-900">
-                        <Trash2 className="h-5 w-5" />
-                      </button>
+                      <IconButton label="Edit buyer" onClick={() => handleEdit(buyer)}>
+                        <Edit className="h-4 w-4" />
+                      </IconButton>
+                      <IconButton label="Remove buyer" variant="danger" onClick={() => handleDelete(buyer.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </IconButton>
                     </div>
                   </div>
-                </div>
               </li>
           ))}
         </ul>

@@ -80,7 +80,7 @@ export default function Layout() {
           >
             <Menu className="h-6 w-6" />
           </button>
-          <p className="font-semibold text-slate-900 truncate text-base">{pageTitle}</p>
+          <p className="font-semibold text-slate-900 truncate text-base flex-1 min-w-0">{pageTitle}</p>
         </header>
 
         <LocalDataBanner />

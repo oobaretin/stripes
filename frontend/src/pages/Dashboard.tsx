@@ -90,7 +90,7 @@ export default function Dashboard() {
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
-            <div key={card.name} className="rounded-lg bg-white p-5 shadow">
+            <div key={card.name} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
               <div className="flex items-center gap-4">
                 <div className={`shrink-0 rounded-md p-3 ${card.color}`}>
                   <Icon className="h-5 w-5 text-white" />
@@ -136,7 +136,7 @@ export default function Dashboard() {
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-lg bg-white shadow">
+        <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-base font-semibold text-slate-900 mb-4">Recent Purchases</h3>
             <div className="space-y-4">
@@ -168,7 +168,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="rounded-lg bg-white shadow">
+        <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-base font-semibold text-slate-900 mb-4">Recent Sales</h3>
             <div className="space-y-4">

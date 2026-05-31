@@ -393,7 +393,7 @@ export default function Products() {
             <button
               type="button"
               onClick={handleLoadDefaultCatalog}
-              className="px-4 py-2 border border-gray-300 text-gray-800 rounded-lg hover:bg-gray-50 text-sm font-medium"
+              className="px-4 py-2 border border-slate-300 text-slate-800 rounded-lg hover:bg-slate-50 text-sm font-medium"
             >
               Load default catalog
             </button>
@@ -425,7 +425,7 @@ export default function Products() {
 
         {/* Settings Panel */}
         {showSettings && (
-          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="mt-4 bg-primary-50 border border-primary-200 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -448,7 +448,7 @@ export default function Products() {
                   This determines the recommended purchase price from sellers. Higher margin = lower purchase price recommendations.
                 </p>
 
-                <div className="mt-4 pt-4 border-t border-blue-200">
+                <div className="mt-4 pt-4 border-t border-primary-200">
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-medium text-gray-700">Buyer columns</div>
                     <div className="flex items-center gap-2">

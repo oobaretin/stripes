@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SK, loadJson, saveJson } from '../lib/localData';
-import { Plus, Search, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
+import ListSkeleton from '../components/ListSkeleton';
+import Modal, { ModalActions } from '../components/Modal';
+import IconButton from '../components/IconButton';
+import SearchField from '../components/SearchField';
 import { useConfirm } from '../context/ConfirmContext';
 import { useToast } from '../context/ToastContext';
 
@@ -107,6 +111,12 @@ export default function Customers() {
     });
   };
 
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingCustomer(null);
+    resetForm();
+  };
+
   return (
     <div>
       <PageHeader
@@ -118,7 +128,7 @@ export default function Customers() {
               resetForm();
               setShowModal(true);
             }}
-            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+            className="btn-primary"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Seller
@@ -127,16 +137,7 @@ export default function Customers() {
       />
 
       <div className="mb-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search sellers..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-          />
-        </div>
+        <SearchField value={searchTerm} onChange={setSearchTerm} placeholder="Search sellers…" />
       </div>
 
       {customers.length === 0 ? (
@@ -151,7 +152,7 @@ export default function Customers() {
                 resetForm();
                 setShowModal(true);
               }}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+              className="btn-primary"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Seller
@@ -161,37 +162,25 @@ export default function Customers() {
       ) : filtered.length === 0 ? (
         <EmptyState title="No matches" description="Try a different search term." />
       ) : (
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul className="divide-y divide-gray-200">
+        <div className="card">
+        <ul className="divide-y divide-slate-100">
           {filtered.map((customer) => (
-            <li key={customer.id}>
-              <div className="px-4 py-4 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {customer.firstName} {customer.lastName}
-                      </p>
-                      <p className="text-sm text-gray-500">{customer.phone}</p>
-                      {customer.email && <p className="text-sm text-gray-500">{customer.email}</p>}
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => handleEdit(customer)}
-                      className="text-primary-600 hover:text-primary-900"
-                      type="button"
-                    >
-                      <Edit className="h-5 w-5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(customer.id)}
-                      className="text-red-600 hover:text-red-900"
-                      type="button"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
-                  </div>
+            <li key={customer.id} className="card-body transition-colors hover:bg-slate-50/80">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900">
+                    {customer.firstName} {customer.lastName}
+                  </p>
+                  <p className="mt-0.5 text-sm text-slate-500">{customer.phone}</p>
+                  {customer.email && <p className="text-sm text-slate-500">{customer.email}</p>}
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <IconButton label="Edit seller" onClick={() => handleEdit(customer)}>
+                    <Edit className="h-4 w-4" />
+                  </IconButton>
+                  <IconButton label="Remove seller" variant="danger" onClick={() => handleDelete(customer.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </IconButton>
                 </div>
               </div>
             </li>
@@ -200,131 +189,60 @@ export default function Customers() {
         </div>
       )}
 
-      {showModal && (
-        <div className="fixed z-10 inset-0 overflow-y-auto">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setShowModal(false)}></div>
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <form onSubmit={handleSubmit}>
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    {editingCustomer ? 'Edit Seller' : 'Add Seller'}
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">First Name</label>
-                        <input
-                          type="text"
-                          required
-                          value={formData.firstName}
-                          onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Last Name</label>
-                        <input
-                          type="text"
-                          required
-                          value={formData.lastName}
-                          onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Phone</label>
-                      <input
-                        type="tel"
-                        required
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Email</label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Address</label>
-                      <input
-                        type="text"
-                        value={formData.address}
-                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                      />
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">City</label>
-                        <input
-                          type="text"
-                          value={formData.city}
-                          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">State</label>
-                        <input
-                          type="text"
-                          value={formData.state}
-                          onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">ZIP</label>
-                        <input
-                          type="text"
-                          value={formData.zipCode}
-                          onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Notes</label>
-                      <textarea
-                        value={formData.notes}
-                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                        rows={3}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                  <button
-                    type="submit"
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm"
-                  >
-                    {editingCustomer ? 'Update' : 'Create'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowModal(false);
-                      setEditingCustomer(null);
-                      resetForm();
-                    }}
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+      <Modal open={showModal} onClose={closeModal} title={editingCustomer ? 'Edit Seller' : 'Add Seller'} size="sm">
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="label-field">First Name</label>
+                <input type="text" required value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} className="input-field" />
+              </div>
+              <div>
+                <label className="label-field">Last Name</label>
+                <input type="text" required value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} className="input-field" />
+              </div>
+            </div>
+            <div>
+              <label className="label-field">Phone</label>
+              <input type="tel" required value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="input-field" />
+            </div>
+            <div>
+              <label className="label-field">Email</label>
+              <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="input-field" />
+            </div>
+            <div>
+              <label className="label-field">Address</label>
+              <input type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} className="input-field" />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="label-field">City</label>
+                <input type="text" value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} className="input-field" />
+              </div>
+              <div>
+                <label className="label-field">State</label>
+                <input type="text" value={formData.state} onChange={(e) => setFormData({ ...formData, state: e.target.value })} className="input-field" />
+              </div>
+              <div>
+                <label className="label-field">ZIP</label>
+                <input type="text" value={formData.zipCode} onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })} className="input-field" />
+              </div>
+            </div>
+            <div>
+              <label className="label-field">Notes</label>
+              <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={3} className="input-field" />
             </div>
           </div>
-        </div>
-      )}
+          <ModalActions>
+            <button type="submit" className="btn-primary">
+              {editingCustomer ? 'Update' : 'Create'}
+            </button>
+            <button type="button" onClick={closeModal} className="btn-secondary">
+              Cancel
+            </button>
+          </ModalActions>
+        </form>
+      </Modal>
     </div>
   );
 }
