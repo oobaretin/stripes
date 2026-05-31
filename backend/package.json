@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "vercel-build": "cd .. && npm run build:frontend && rm -rf backend/site && mkdir -p backend/site && cp -r frontend/dist/. backend/site/",
     "postinstall": "prisma generate",
     "start": "prisma db push --accept-data-loss && node dist/index.js",
     "db:generate": "prisma generate",
