@@ -1,6 +1,6 @@
 /**
  * Builds the local-storage category tree from `northeastCatalogRaw.ts`
- * (same SKU list as `backend/src/scripts/seedNortheastMedicalProducts.ts`).
+ * Northeast Medical Exchange SKU list for the in-browser product catalog.
  */
 import { NORTHEAST_CATALOG } from './northeastCatalogRaw';
 import { SEED_BUYERS } from './seedBuyersData';

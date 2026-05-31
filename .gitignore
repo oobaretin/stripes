@@ -9,7 +9,6 @@ coverage/
 # Production
 dist/
 build/
-backend/site/
 
 # Environment variables
 .env
@@ -25,12 +24,6 @@ yarn-error.log*
 lerna-debug.log*
 *.log
 
-# Database
-*.db
-*.db-journal
-backend/dev.db
-backend/dev.db-journal
-
 # IDE
 .vscode/
 .idea/
@@ -41,10 +34,3 @@ backend/dev.db-journal
 # OS
 .DS_Store
 Thumbs.db
-
-# Prisma
-backend/prisma/migrations/
-
-
-
-

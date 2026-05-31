@@ -120,18 +120,10 @@ This ensures you always know:
 
 ## Next Steps
 
-1. **Update Database**:
-   ```bash
-   cd backend
-   npm run db:generate
-   npm run db:push
-   ```
-
-2. **Start Using**:
-   - Add your sellers
-   - Record purchases (mark as online or in-person)
-   - Record sales to buyers
-   - Watch your profit grow!
+1. Open `/dashboard` — data is saved in this browser automatically
+2. Add sellers on **Sellers / Suppliers**
+3. Record purchases (online or in-person) and sales to buyers
+4. Use **Products** for catalog, tiers, and margin-based buy suggestions
 
 ## Tips
 

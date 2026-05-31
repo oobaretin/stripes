@@ -1,4 +1,4 @@
-/** Matches `backend/src/scripts/seedBuyers.ts` — used to prepopulate local storage buyers. */
+/** Default buyers for local storage — edit `SEED_BUYERS` to change the seed list. */
 export const SEED_BUYERS: any[] = [
   {
     id: 'buyer-northeast-medical-exchange',

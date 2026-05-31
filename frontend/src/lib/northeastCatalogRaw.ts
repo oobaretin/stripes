@@ -1,7 +1,7 @@
 /**
- * Mirrors `backend/src/scripts/seedNortheastMedicalProducts.ts` — Northeast Medical Exchange SKU list
+ * Northeast Medical Exchange SKU list for the in-browser product catalog
  * (test strips with NDC codes, CGM / Dexcom / Libre / Omnipod, lancets, insulin vials).
- * Edit the backend script if this list should change, then re-sync this file.
+ * Edit this file to change seeded products, then reload the default catalog from the Products page.
  */
 
 interface ProductData {

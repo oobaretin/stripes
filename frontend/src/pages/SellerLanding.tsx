@@ -420,7 +420,7 @@ export default function SellerLanding() {
             <p className="mt-2 text-gray-600">
               The Striply dashboard mirrors a production resale workflow: Northeast-style product sheets with NDCs,
               expiration tiers, ding pricing, CGM and insulin categories, plus your own buyers, purchases, and sales—
-              stored only in this browser until you export or connect a backend later.
+              stored only in this browser unless you clear site data or switch devices.
             </p>
           </div>
           <ul className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-700">
