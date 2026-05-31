@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouteSeo } from '../hooks/useRouteSeo';
 import { Menu, X } from 'lucide-react';
 import { APP_SHELL_ROUTES, appShellHref } from '../config/appShellRoutes';
+import LocalDataBanner from './LocalDataBanner';
 
 export default function Layout() {
   const location = useLocation();
@@ -11,6 +12,7 @@ export default function Layout() {
 
   const current = APP_SHELL_ROUTES.find((item) => location.pathname === appShellHref(item.path));
   const pageTitle = current?.navLabel ?? 'Striply';
+  const pageDescription = current?.description ?? 'Diabetic test strip business dashboard';
 
   const NavLinks = ({ onNavigate }: { onNavigate?: () => void }) => (
     <>
@@ -81,9 +83,11 @@ export default function Layout() {
           <p className="font-semibold text-slate-900 truncate text-base">{pageTitle}</p>
         </header>
 
+        <LocalDataBanner />
+
         <header className="hidden lg:block border-b border-slate-200 bg-white px-8 py-5">
           <p className="text-2xl font-semibold tracking-tight text-slate-900">{pageTitle}</p>
-          <p className="mt-1 text-sm text-slate-500">Diabetic test strip business dashboard</p>
+          <p className="mt-1 text-sm text-slate-500">{pageDescription}</p>
         </header>
 
         <main

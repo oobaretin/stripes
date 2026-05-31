@@ -2,8 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { SK, loadBuyersOrSeed, saveJson } from '../lib/localData';
 import { SEED_BUYERS } from '../lib/seedBuyersData';
 import { Plus, Search, Edit, Trash2, Star, ExternalLink } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
+import EmptyState from '../components/EmptyState';
+import { useConfirm } from '../context/ConfirmContext';
+import { useToast } from '../context/ToastContext';
 
 export default function Buyers() {
+  const confirm = useConfirm();
+  const showToast = useToast();
   const [buyers, setBuyers] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -59,6 +65,7 @@ export default function Buyers() {
     setShowModal(false);
     setEditingBuyer(null);
     resetForm();
+    showToast(editingBuyer ? 'Buyer updated' : 'Buyer added');
   };
 
   const handleEdit = (buyer: any) => {
@@ -86,10 +93,16 @@ export default function Buyers() {
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to remove this buyer?')) {
-      persist(buyers.filter((b) => b.id !== id));
-    }
+  const handleDelete = async (id: string) => {
+    const ok = await confirm({
+      title: 'Remove buyer',
+      message: 'This buyer will be removed from your list.',
+      confirmLabel: 'Remove',
+      destructive: true,
+    });
+    if (!ok) return;
+    persist(buyers.filter((b) => b.id !== id));
+    showToast('Buyer removed');
   };
 
   const resetForm = () => {
@@ -119,40 +132,40 @@ export default function Buyers() {
     const existingIds = new Set(buyers.map((b) => b.id));
     const toAdd = SEED_BUYERS.filter((b) => !existingIds.has(b.id)).map((b) => ({ ...b }));
     if (toAdd.length === 0) {
-      alert('All default buyers are already in your list.');
+      showToast('All default buyers are already in your list.');
       return;
     }
     persist([...buyers, ...toAdd]);
+    showToast(`Added ${toAdd.length} default buyer${toAdd.length === 1 ? '' : 's'}`);
   };
 
   return (
-    <div className="px-4 py-6 sm:px-0">
-      <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">Buyers</h2>
-          <p className="mt-2 text-sm text-gray-600">Manage your resale customers</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={handleAddDefaultBuyers}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-          >
-            Add default buyers
-          </button>
-        <button
-          onClick={() => {
-            setEditingBuyer(null);
-            resetForm();
-            setShowModal(true);
-          }}
-          className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Buyer
-        </button>
-        </div>
-      </div>
+    <div>
+      <PageHeader
+        description="Manage resale partners, price sheets, and preferred buyers."
+        actions={
+          <>
+            <button
+              type="button"
+              onClick={handleAddDefaultBuyers}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              Add default buyers
+            </button>
+            <button
+              onClick={() => {
+                setEditingBuyer(null);
+                resetForm();
+                setShowModal(true);
+              }}
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Buyer
+            </button>
+          </>
+        }
+      />
 
       <div className="mb-4">
         <div className="relative">
@@ -167,6 +180,37 @@ export default function Buyers() {
         </div>
       </div>
 
+      {buyers.length === 0 ? (
+        <EmptyState
+          title="No buyers yet"
+          description="Add resale partners or load the default buyer list to compare price sheets."
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              <button
+                type="button"
+                onClick={handleAddDefaultBuyers}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md border border-slate-300 bg-white hover:bg-slate-50"
+              >
+                Add default buyers
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingBuyer(null);
+                  resetForm();
+                  setShowModal(true);
+                }}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Buyer
+              </button>
+            </div>
+          }
+        />
+      ) : filtered.length === 0 ? (
+        <EmptyState title="No matches" description="Try a different search term." />
+      ) : (
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
         <ul className="divide-y divide-gray-200">
           {filtered.map((buyer) => (
@@ -218,6 +262,7 @@ export default function Buyers() {
           ))}
         </ul>
       </div>
+      )}
 
       {showModal && (
         <div className="fixed z-10 inset-0 overflow-y-auto">

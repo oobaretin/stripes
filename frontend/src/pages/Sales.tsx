@@ -3,8 +3,15 @@ import { Link } from 'react-router-dom';
 import { SK, loadJson, saveJson, loadBuyersOrSeed, getProductCatalog } from '../lib/localData';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import PageHeader from '../components/PageHeader';
+import EmptyState from '../components/EmptyState';
+import ListSkeleton from '../components/ListSkeleton';
+import { useConfirm } from '../context/ConfirmContext';
+import { useToast } from '../context/ToastContext';
 
 export default function Sales() {
+  const confirm = useConfirm();
+  const showToast = useToast();
   const [sales, setSales] = useState<any[]>([]);
   const [buyers, setBuyers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -85,6 +92,7 @@ export default function Sales() {
     setShowModal(false);
     setEditingSale(null);
     resetForm();
+    showToast(editingSale ? 'Sale updated' : 'Sale saved');
   };
 
   const handleEdit = (sale: any) => {
@@ -102,12 +110,18 @@ export default function Sales() {
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this sale?')) {
-      const next = sales.filter((s) => s.id !== id);
-      saveJson(SK.sales, next);
-      setSales(next);
-    }
+  const handleDelete = async (id: string) => {
+    const ok = await confirm({
+      title: 'Delete sale',
+      message: 'This sale will be removed from your local records. This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+    if (!ok) return;
+    const next = sales.filter((s) => s.id !== id);
+    saveJson(SK.sales, next);
+    setSales(next);
+    showToast('Sale deleted');
   };
 
   const addItem = () => {
@@ -141,27 +155,45 @@ export default function Sales() {
   };
 
   return (
-    <div className="px-4 py-6 sm:px-0">
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">Sales</h2>
-          <p className="mt-2 text-sm text-gray-600">Track sales to buyers</p>
-        </div>
-        <button
-          onClick={() => {
-            setEditingSale(null);
-            resetForm();
-            setShowModal(true);
-          }}
-          className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Sale
-        </button>
-      </div>
+    <div>
+      <PageHeader
+        description="Track sales to buyers."
+        actions={
+          <button
+            onClick={() => {
+              setEditingSale(null);
+              resetForm();
+              setShowModal(true);
+            }}
+            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Sale
+          </button>
+        }
+      />
 
       {loading ? (
-        <div className="text-center py-12">Loading...</div>
+        <ListSkeleton rows={5} />
+      ) : sales.length === 0 ? (
+        <EmptyState
+          title="No sales yet"
+          description="Record your first sale to a buyer and track revenue."
+          action={
+            <button
+              type="button"
+              onClick={() => {
+                setEditingSale(null);
+                resetForm();
+                setShowModal(true);
+              }}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Sale
+            </button>
+          }
+        />
       ) : (
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
           <ul className="divide-y divide-gray-200">

@@ -2,11 +2,15 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import SellerLanding from './pages/SellerLanding';
 import { APP_SHELL_DEFAULT_HREF, APP_SHELL_ROUTES } from './config/appShellRoutes';
+import { ToastProvider } from './context/ToastContext';
+import { ConfirmProvider } from './context/ConfirmContext';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
+    <ToastProvider>
+      <ConfirmProvider>
+        <BrowserRouter>
+          <Routes>
         <Route path="/sell" element={<SellerLanding />} />
         <Route path="/login" element={<Navigate to={APP_SHELL_DEFAULT_HREF} replace />} />
         <Route path="/register" element={<Navigate to={APP_SHELL_DEFAULT_HREF} replace />} />
@@ -17,8 +21,10 @@ function App() {
           ))}
         </Route>
         <Route path="*" element={<Navigate to={APP_SHELL_DEFAULT_HREF} replace />} />
-      </Routes>
-    </BrowserRouter>
+          </Routes>
+        </BrowserRouter>
+      </ConfirmProvider>
+    </ToastProvider>
   );
 }
 

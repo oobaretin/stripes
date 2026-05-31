@@ -2,8 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { SK, loadCategoriesOrSeed, loadBuyersOrSeed, saveJson } from '../lib/localData';
 import { SEED_CATEGORIES } from '../lib/seedCategoriesData';
 import { ChevronDown, ChevronRight, AlertCircle, TrendingUp, DollarSign, Settings } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
+import ListSkeleton from '../components/ListSkeleton';
+import { useConfirm } from '../context/ConfirmContext';
+import { useToast } from '../context/ToastContext';
 
 export default function Products() {
+  const confirm = useConfirm();
+  const showToast = useToast();
   const [categories, setCategories] = useState<any[]>([]);
   const [buyers, setBuyers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +41,11 @@ export default function Products() {
     return !window.matchMedia('(max-width: 639px)').matches;
   });
   const [openInfoKey, setOpenInfoKey] = useState<string | null>(null);
+
+  const displayBuyers = useMemo(() => {
+    const active = buyers.filter((b) => b?.isActive !== false);
+    return selectedBuyerIds.size > 0 ? active.filter((b) => selectedBuyerIds.has(b.id)) : active;
+  }, [buyers, selectedBuyerIds]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -115,18 +126,20 @@ export default function Products() {
     }
   };
 
-  const handleLoadDefaultCatalog = () => {
-    if (
-      !confirm(
-        'Replace your in-browser product catalog with the default categories, products, and sample buyer prices? This overwrites the current category tree.'
-      )
-    ) {
-      return;
-    }
+  const handleLoadDefaultCatalog = async () => {
+    const ok = await confirm({
+      title: 'Load default catalog',
+      message:
+        'Replace your in-browser product catalog with the default categories, products, and sample buyer prices? This overwrites the current category tree.',
+      confirmLabel: 'Replace catalog',
+      destructive: true,
+    });
+    if (!ok) return;
     const next = JSON.parse(JSON.stringify(SEED_CATEGORIES)) as any[];
     saveJson(SK.categories, next);
     setCategories(next);
     if (next[0]?.id) setExpandedCategories(new Set([next[0].id]));
+    showToast('Default catalog loaded');
   };
 
   const toggleCategory = (categoryId: string) => {
@@ -351,7 +364,7 @@ export default function Products() {
   };
 
   if (loading) {
-    return <div className="text-center py-12">Loading...</div>;
+    return <ListSkeleton rows={6} />;
   }
 
   if (error) {
@@ -372,18 +385,11 @@ export default function Products() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-0">
-      <div className="mb-6">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900">Products</h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Full Northeast-style catalog: NDC-level SKUs, expiration tiers (R1/R2), ding adjustments, and special buyer
-              notes. Other buyers show scaled sample prices for comparison—Northeast Medical Exchange matches the sheet
-              values.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
+    <div>
+      <PageHeader
+        description="Full Northeast-style catalog: NDC-level SKUs, expiration tiers (R1/R2), ding adjustments, and special buyer notes."
+        actions={
+          <>
             <button
               type="button"
               onClick={handleLoadDefaultCatalog}
@@ -391,16 +397,32 @@ export default function Products() {
             >
               Load default catalog
             </button>
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              <Settings className="h-4 w-4" />
+              <span>Settings</span>
+            </button>
+          </>
+        }
+      />
+
+      {isSmallScreen && displayBuyers.length > 2 && (
+        <div className="sticky top-14 z-30 -mx-4 mb-4 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 py-2 backdrop-blur sm:-mx-6 lg:hidden">
+          <span className="text-xs text-slate-600">
+            Showing {showAllBuyerColumns ? displayBuyers.length : 2} of {displayBuyers.length} buyers
+          </span>
           <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            type="button"
+            onClick={() => setShowAllBuyerColumns((v) => !v)}
+            className="text-xs font-medium text-primary-700 hover:text-primary-900"
           >
-            <Settings className="h-4 w-4" />
-            <span>Settings</span>
+            {showAllBuyerColumns ? 'Show fewer columns' : 'Show all buyers'}
           </button>
-          </div>
         </div>
-        
+      )}
+
         {/* Settings Panel */}
         {showSettings && (
           <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -498,23 +520,21 @@ export default function Products() {
             </div>
           </div>
         )}
-      </div>
-
+      
       <div className="bg-white shadow rounded-lg overflow-hidden">
         {displayCategories.length === 0 ? (
           <div className="p-8 text-center">
             <p className="text-gray-500 mb-4">No categories or products found.</p>
-            <p className="text-sm text-gray-400 mb-2">
-              Your database needs to be seeded with product data.
+            <p className="text-sm text-gray-400 mb-4">
+              Load the default catalog to get started with sample SKUs and buyer prices.
             </p>
-            <div className="text-xs text-gray-400 space-y-1">
-              <p>If deployed on Railway, run these commands:</p>
-              <div className="bg-gray-100 p-3 rounded mt-2 text-left max-w-md mx-auto">
-                <code className="block mb-1">railway run npm run seed:buyers</code>
-                <code className="block">railway run npm run seed:categories</code>
-              </div>
-              <p className="mt-2">Or use Railway Dashboard → Backend Service → Run Command</p>
-            </div>
+            <button
+              type="button"
+              onClick={handleLoadDefaultCatalog}
+              className="inline-flex px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+            >
+              Load default catalog
+            </button>
           </div>
         ) : (
           <div className="divide-y divide-gray-200">

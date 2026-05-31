@@ -1,16 +1,16 @@
 import { useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { SK, loadJson, getProductCatalog, loadBuyersOrSeed } from '../lib/localData';
-import { Link } from 'react-router-dom';
-import { Users, Package, TrendingUp, TrendingDown, DollarSign, UserRound, Store, LineChart, ArrowRight } from 'lucide-react';
+import { DollarSign, TrendingDown, TrendingUp, Package, CheckCircle2, Circle } from 'lucide-react';
 import { format } from 'date-fns';
+import PageHeader from '../components/PageHeader';
 
 export default function Dashboard() {
   const location = useLocation();
+  const owner = loadJson<Record<string, string>>(SK.profile, {});
 
   const stats = useMemo(() => {
     const customers = loadJson<any[]>(SK.customers, []);
-    const buyers = loadBuyersOrSeed();
     const products = getProductCatalog().filter((p) => p.isActive !== false);
     const purchases = loadJson<any[]>(SK.purchases, []);
     const sales = loadJson<any[]>(SK.sales, []);
@@ -18,7 +18,6 @@ export default function Dashboard() {
     const totalPurchases = purchases.reduce((s, p) => s + Number(p.totalAmount || 0), 0);
     const totalSales = sales.reduce((s, x) => s + Number(x.totalAmount || 0), 0);
     const profit = totalSales - totalPurchases;
-    const profitMargin = totalSales > 0 ? (profit / totalSales) * 100 : 0;
 
     const recentPurchases = [...purchases]
       .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime())
@@ -29,159 +28,138 @@ export default function Dashboard() {
 
     return {
       counts: {
-        customers: { total: customers.length },
-        buyers: { total: buyers.length },
-        products: { active: products.length },
+        customers: customers.length,
+        products: products.length,
+        purchases: purchases.length,
+        sales: sales.length,
       },
-      financials: {
-        totalSales,
-        totalPurchases,
-        profit,
-        profitMargin,
-      },
+      financials: { totalSales, totalPurchases, profit },
       recentActivity: { purchases: recentPurchases, sales: recentSales },
     };
   }, [location.key]);
 
-  const owner = loadJson<Record<string, string>>(SK.profile, {});
+  const welcome = owner.firstName
+    ? `Welcome, ${owner.firstName}${owner.lastName ? ` ${owner.lastName}` : ''}`
+    : undefined;
+
+  const checklist = [
+    { label: 'Complete your profile', done: Boolean(owner.firstName?.trim()), to: '/profile' },
+    { label: 'Add a seller', done: stats.counts.customers > 0, to: '/customers' },
+    { label: 'Review the product catalog', done: stats.counts.products > 0, to: '/products' },
+    { label: 'Log your first purchase', done: stats.counts.purchases > 0, to: '/purchases' },
+    { label: 'Log your first sale', done: stats.counts.sales > 0, to: '/sales' },
+  ];
+
+  const completedSteps = checklist.filter((s) => s.done).length;
 
   const statCards = [
-    {
-      name: 'Total Customers',
-      value: stats.counts.customers.total,
-      icon: Users,
-      color: 'bg-blue-500',
-    },
-    {
-      name: 'Total Buyers',
-      value: stats.counts.buyers.total,
-      icon: Users,
-      color: 'bg-green-500',
-    },
-    {
-      name: 'Active Products',
-      value: stats.counts.products.active,
-      icon: Package,
-      color: 'bg-purple-500',
-    },
     {
       name: 'Total Revenue',
       value: `$${stats.financials.totalSales.toFixed(2)}`,
       icon: DollarSign,
-      color: 'bg-yellow-500',
+      color: 'bg-primary-600',
     },
     {
       name: 'Total Purchases',
       value: `$${stats.financials.totalPurchases.toFixed(2)}`,
       icon: TrendingDown,
-      color: 'bg-red-500',
+      color: 'bg-slate-600',
     },
     {
       name: 'Profit',
       value: `$${stats.financials.profit.toFixed(2)}`,
       icon: TrendingUp,
-      color: 'bg-green-500',
+      color: stats.financials.profit >= 0 ? 'bg-green-600' : 'bg-red-600',
     },
     {
-      name: 'Profit Margin',
-      value: `${stats.financials.profitMargin.toFixed(1)}%`,
-      icon: TrendingUp,
-      color: 'bg-blue-500',
-    },
-  ];
-
-  const featureItems = [
-    {
-      title: 'Business profile',
-      description: 'Edit the name and contact info used across your dashboard.',
-      to: '/profile',
-      icon: UserRound,
-    },
-    {
-      title: 'Sellers & suppliers',
-      description: 'Track people you buy strips from (online or in person).',
-      to: '/customers',
-      icon: Users,
-    },
-    {
-      title: 'Buyers',
-      description: 'Manage resale partners, price sheets, and preferred buyers.',
-      to: '/buyers',
-      icon: Store,
-    },
-    {
-      title: 'Products & price grid',
-      description:
-        'Full SKU list (strips with NDCs, CGM, lancets, insulin), tier prices, ding deductions, and margin-based buy suggestions.',
-      to: '/products',
+      name: 'Active Products',
+      value: stats.counts.products,
       icon: Package,
-    },
-    {
-      title: 'Purchases',
-      description: 'Log buys from sellers with line items and running totals.',
-      to: '/purchases',
-      icon: TrendingDown,
-    },
-    {
-      title: 'Sales',
-      description: 'Record sales to buyers and keep history in one place.',
-      to: '/sales',
-      icon: LineChart,
+      color: 'bg-primary-600',
     },
   ];
 
   return (
-    <div className="px-4 py-6 sm:px-0">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900">
-          {owner.firstName ? `Welcome, ${owner.firstName} ${owner.lastName || ''}`.trim() : 'Dashboard'}
-        </h2>
-        <p className="mt-2 text-sm text-gray-600">Overview of your business (saved in this browser only)</p>
-      </div>
+    <div>
+      <PageHeader
+        lead={welcome}
+        description="Overview of revenue, costs, and recent activity in your local workspace."
+      />
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
-            <div key={card.name} className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className={`flex-shrink-0 ${card.color} rounded-md p-3`}>
-                    <Icon className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">{card.name}</dt>
-                      <dd className="text-lg font-semibold text-gray-900">{card.value}</dd>
-                    </dl>
-                  </div>
+            <div key={card.name} className="rounded-lg bg-white p-5 shadow">
+              <div className="flex items-center gap-4">
+                <div className={`shrink-0 rounded-md p-3 ${card.color}`}>
+                  <Icon className="h-5 w-5 text-white" />
                 </div>
+                <dl className="min-w-0">
+                  <dt className="truncate text-sm font-medium text-slate-500">{card.name}</dt>
+                  <dd className="text-lg font-semibold text-slate-900">{card.value}</dd>
+                </dl>
               </div>
             </div>
           );
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white shadow rounded-lg">
+      {completedSteps < checklist.length && (
+        <div className="mb-8 rounded-lg border border-primary-200 bg-primary-50 p-5">
+          <div className="flex items-center justify-between gap-4 mb-3">
+            <h3 className="text-sm font-semibold text-primary-900">Get started</h3>
+            <span className="text-xs font-medium text-primary-700">
+              {completedSteps} of {checklist.length} complete
+            </span>
+          </div>
+          <ul className="space-y-2">
+            {checklist.map((step) => (
+              <li key={step.to}>
+                <Link
+                  to={step.to}
+                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-primary-100/80 transition-colors"
+                >
+                  {step.done ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" aria-hidden />
+                  ) : (
+                    <Circle className="h-4 w-4 shrink-0 text-primary-400" aria-hidden />
+                  )}
+                  <span className={step.done ? 'text-slate-500 line-through' : 'text-slate-800 font-medium'}>
+                    {step.label}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-lg bg-white shadow">
           <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Purchases</h3>
+            <h3 className="text-base font-semibold text-slate-900 mb-4">Recent Purchases</h3>
             <div className="space-y-4">
               {stats.recentActivity.purchases.length === 0 ? (
-                <p className="text-sm text-gray-500">No recent purchases</p>
+                <p className="text-sm text-slate-500">
+                  No purchases yet.{' '}
+                  <Link to="/purchases" className="font-medium text-primary-700 hover:underline">
+                    Log a purchase
+                  </Link>
+                </p>
               ) : (
                 stats.recentActivity.purchases.map((purchase: any) => (
-                  <div key={purchase.id} className="border-b border-gray-200 pb-3 last:border-0">
-                    <div className="flex justify-between">
+                  <div key={purchase.id} className="border-b border-slate-100 pb-3 last:border-0">
+                    <div className="flex justify-between gap-4">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-slate-900">
                           {purchase.customer?.firstName} {purchase.customer?.lastName}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-slate-500">
                           {format(new Date(purchase.purchaseDate), 'MMM d, yyyy')}
                         </p>
                       </div>
-                      <p className="text-sm font-semibold text-gray-900">${Number(purchase.totalAmount).toFixed(2)}</p>
+                      <p className="text-sm font-semibold text-slate-900">${Number(purchase.totalAmount).toFixed(2)}</p>
                     </div>
                   </div>
                 ))
@@ -190,69 +168,34 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white shadow rounded-lg">
+        <div className="rounded-lg bg-white shadow">
           <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Sales</h3>
+            <h3 className="text-base font-semibold text-slate-900 mb-4">Recent Sales</h3>
             <div className="space-y-4">
               {stats.recentActivity.sales.length === 0 ? (
-                <p className="text-sm text-gray-500">No recent sales</p>
+                <p className="text-sm text-slate-500">
+                  No sales yet.{' '}
+                  <Link to="/sales" className="font-medium text-primary-700 hover:underline">
+                    Log a sale
+                  </Link>
+                </p>
               ) : (
                 stats.recentActivity.sales.map((sale: any) => (
-                  <div key={sale.id} className="border-b border-gray-200 pb-3 last:border-0">
-                    <div className="flex justify-between">
+                  <div key={sale.id} className="border-b border-slate-100 pb-3 last:border-0">
+                    <div className="flex justify-between gap-4">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-slate-900">
                           {sale.buyer?.firstName} {sale.buyer?.lastName}
                         </p>
-                        <p className="text-xs text-gray-500">{format(new Date(sale.saleDate), 'MMM d, yyyy')}</p>
+                        <p className="text-xs text-slate-500">{format(new Date(sale.saleDate), 'MMM d, yyyy')}</p>
                       </div>
-                      <p className="text-sm font-semibold text-gray-900">${Number(sale.totalAmount).toFixed(2)}</p>
+                      <p className="text-sm font-semibold text-slate-900">${Number(sale.totalAmount).toFixed(2)}</p>
                     </div>
                   </div>
                 ))
               )}
             </div>
           </div>
-        </div>
-      </div>
-
-      <div className="mt-10">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Striply features</h2>
-        <p className="text-sm text-gray-600 mb-4 max-w-3xl">
-          Local-first workspace for diabetic supply resale: catalog and buyer pricing live in your browser—no server login
-          required.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {featureItems.map((f) => {
-            const Icon = f.icon;
-            return (
-              <Link
-                key={f.to}
-                to={f.to}
-                className="group flex gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm hover:border-primary-300 hover:shadow transition-all"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary-50 text-primary-700">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1 font-medium text-gray-900 group-hover:text-primary-800">
-                    {f.title}
-                    <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                  <p className="mt-1 text-xs text-gray-600 leading-snug">{f.description}</p>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-        <div className="mt-4">
-          <Link
-            to="/sell"
-            className="inline-flex items-center text-sm font-medium text-primary-700 hover:text-primary-900"
-          >
-            Open public seller landing page
-            <ArrowRight className="ml-1 h-4 w-4" />
-          </Link>
         </div>
       </div>
     </div>

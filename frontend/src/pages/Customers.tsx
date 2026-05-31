@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SK, loadJson, saveJson } from '../lib/localData';
 import { Plus, Search, Edit, Trash2 } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
+import EmptyState from '../components/EmptyState';
+import { useConfirm } from '../context/ConfirmContext';
+import { useToast } from '../context/ToastContext';
 
 export default function Customers() {
+  const confirm = useConfirm();
+  const showToast = useToast();
   const [customers, setCustomers] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -54,6 +60,7 @@ export default function Customers() {
     setShowModal(false);
     setEditingCustomer(null);
     resetForm();
+    showToast(editingCustomer ? 'Seller updated' : 'Seller added');
   };
 
   const handleEdit = (customer: any) => {
@@ -73,10 +80,16 @@ export default function Customers() {
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to remove this customer?')) {
-      persist(customers.filter((c) => c.id !== id));
-    }
+  const handleDelete = async (id: string) => {
+    const ok = await confirm({
+      title: 'Remove seller',
+      message: 'This seller will be removed from your list. Purchases already logged will keep their saved names.',
+      confirmLabel: 'Remove',
+      destructive: true,
+    });
+    if (!ok) return;
+    persist(customers.filter((c) => c.id !== id));
+    showToast('Seller removed');
   };
 
   const resetForm = () => {
@@ -95,31 +108,30 @@ export default function Customers() {
   };
 
   return (
-    <div className="px-4 py-6 sm:px-0">
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">Sellers / Suppliers</h2>
-          <p className="mt-2 text-sm text-gray-600">People you buy test strips from (online or in-person)</p>
-        </div>
-        <button
-          onClick={() => {
-            setEditingCustomer(null);
-            resetForm();
-            setShowModal(true);
-          }}
-          className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Customer
-        </button>
-      </div>
+    <div>
+      <PageHeader
+        description="People you buy test strips from — online or in person."
+        actions={
+          <button
+            onClick={() => {
+              setEditingCustomer(null);
+              resetForm();
+              setShowModal(true);
+            }}
+            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Seller
+          </button>
+        }
+      />
 
       <div className="mb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Search customers..."
+            placeholder="Search sellers..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
@@ -127,7 +139,29 @@ export default function Customers() {
         </div>
       </div>
 
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+      {customers.length === 0 ? (
+        <EmptyState
+          title="No sellers yet"
+          description="Add someone you buy strips from so you can log purchases against them."
+          action={
+            <button
+              type="button"
+              onClick={() => {
+                setEditingCustomer(null);
+                resetForm();
+                setShowModal(true);
+              }}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Seller
+            </button>
+          }
+        />
+      ) : filtered.length === 0 ? (
+        <EmptyState title="No matches" description="Try a different search term." />
+      ) : (
+        <div className="bg-white shadow overflow-hidden sm:rounded-md">
         <ul className="divide-y divide-gray-200">
           {filtered.map((customer) => (
             <li key={customer.id}>
@@ -163,7 +197,8 @@ export default function Customers() {
             </li>
           ))}
         </ul>
-      </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed z-10 inset-0 overflow-y-auto">
@@ -173,7 +208,7 @@ export default function Customers() {
               <form onSubmit={handleSubmit}>
                 <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                   <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    {editingCustomer ? 'Edit Customer' : 'Add Customer'}
+                    {editingCustomer ? 'Edit Seller' : 'Add Seller'}
                   </h3>
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">

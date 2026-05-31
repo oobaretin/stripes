@@ -3,8 +3,15 @@ import { Link } from 'react-router-dom';
 import { SK, loadJson, saveJson, getProductCatalog } from '../lib/localData';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import PageHeader from '../components/PageHeader';
+import EmptyState from '../components/EmptyState';
+import ListSkeleton from '../components/ListSkeleton';
+import { useConfirm } from '../context/ConfirmContext';
+import { useToast } from '../context/ToastContext';
 
 export default function Purchases() {
+  const confirm = useConfirm();
+  const showToast = useToast();
   const [purchases, setPurchases] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -87,6 +94,7 @@ export default function Purchases() {
     setShowModal(false);
     setEditingPurchase(null);
     resetForm();
+    showToast(editingPurchase ? 'Purchase updated' : 'Purchase saved');
   };
 
   const handleEdit = (purchase: any) => {
@@ -107,12 +115,18 @@ export default function Purchases() {
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this purchase?')) {
-      const next = purchases.filter((p) => p.id !== id);
-      saveJson(SK.purchases, next);
-      setPurchases(next);
-    }
+  const handleDelete = async (id: string) => {
+    const ok = await confirm({
+      title: 'Delete purchase',
+      message: 'This purchase will be removed from your local records. This cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+    if (!ok) return;
+    const next = purchases.filter((p) => p.id !== id);
+    saveJson(SK.purchases, next);
+    setPurchases(next);
+    showToast('Purchase deleted');
   };
 
   const addItem = () => {
@@ -147,27 +161,45 @@ export default function Purchases() {
   };
 
   return (
-    <div className="px-4 py-6 sm:px-0">
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900">Purchases</h2>
-          <p className="mt-2 text-sm text-gray-600">Track purchases from sellers (online or in-person)</p>
-        </div>
-        <button
-          onClick={() => {
-            setEditingPurchase(null);
-            resetForm();
-            setShowModal(true);
-          }}
-          className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Purchase
-        </button>
-      </div>
+    <div>
+      <PageHeader
+        description="Track purchases from sellers (online or in-person)."
+        actions={
+          <button
+            onClick={() => {
+              setEditingPurchase(null);
+              resetForm();
+              setShowModal(true);
+            }}
+            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Purchase
+          </button>
+        }
+      />
 
       {loading ? (
-        <div className="text-center py-12">Loading...</div>
+        <ListSkeleton rows={5} />
+      ) : purchases.length === 0 ? (
+        <EmptyState
+          title="No purchases yet"
+          description="Log your first buy from a seller to track costs and inventory."
+          action={
+            <button
+              type="button"
+              onClick={() => {
+                setEditingPurchase(null);
+                resetForm();
+                setShowModal(true);
+              }}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Purchase
+            </button>
+          }
+        />
       ) : (
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
           <ul className="divide-y divide-gray-200">

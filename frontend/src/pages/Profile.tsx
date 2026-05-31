@@ -1,5 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SK, loadJson, saveJson } from '../lib/localData';
+import { downloadBackup, importAllData } from '../lib/backupData';
+import PageHeader from '../components/PageHeader';
+import ListSkeleton from '../components/ListSkeleton';
+import { useConfirm } from '../context/ConfirmContext';
+import { useToast } from '../context/ToastContext';
+import { Download, Upload } from 'lucide-react';
 
 const defaultProfile = {
   firstName: '',
@@ -14,6 +20,9 @@ const defaultProfile = {
 };
 
 export default function Profile() {
+  const confirm = useConfirm();
+  const showToast = useToast();
+  const importInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState(defaultProfile);
@@ -27,21 +36,40 @@ export default function Profile() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    saveJson(SK.profile, formData);
-    alert('Profile saved in this browser.');
+    if (!saveJson(SK.profile, formData)) {
+      showToast('Could not save — browser storage may be full.');
+      setSaving(false);
+      return;
+    }
+    showToast('Profile saved in this browser.');
     setSaving(false);
   };
 
+  const handleImport = async (file: File) => {
+    const text = await file.text();
+    const ok = await confirm({
+      title: 'Import backup',
+      message: 'This replaces all Striply data in this browser with the backup file. Continue?',
+      confirmLabel: 'Import',
+      destructive: true,
+    });
+    if (!ok) return;
+    const result = importAllData(text);
+    if (result.ok === false) {
+      showToast(result.error);
+      return;
+    }
+    showToast('Backup imported — reloading…');
+    window.setTimeout(() => window.location.reload(), 600);
+  };
+
   if (loading) {
-    return <div className="text-center py-12">Loading...</div>;
+    return <ListSkeleton rows={3} />;
   }
 
   return (
-    <div className="px-4 py-6 sm:px-0">
-      <div className="mb-6">
-        <h2 className="text-3xl font-bold text-gray-900">Profile</h2>
-        <p className="mt-2 text-sm text-gray-600">Your business information (stored locally in this browser)</p>
-      </div>
+    <div>
+      <PageHeader description="Your business information (stored locally in this browser)." />
 
       <div className="bg-white shadow rounded-lg">
         <form onSubmit={handleSubmit} className="p-6">
@@ -169,6 +197,45 @@ export default function Profile() {
             </button>
           </div>
         </form>
+      </div>
+
+      <div className="mt-8 rounded-lg border border-slate-200 bg-white p-6 shadow">
+        <h3 className="text-base font-semibold text-slate-900">Data backup</h3>
+        <p className="mt-1 text-sm text-slate-600">
+          Export or import all Striply data stored in this browser (catalog, sellers, buyers, purchases, sales).
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              downloadBackup();
+              showToast('Backup downloaded');
+            }}
+            className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <Download className="h-4 w-4" />
+            Export JSON
+          </button>
+          <button
+            type="button"
+            onClick={() => importInputRef.current?.click()}
+            className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <Upload className="h-4 w-4" />
+            Import JSON
+          </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="sr-only"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void handleImport(file);
+              e.target.value = '';
+            }}
+          />
+        </div>
       </div>
     </div>
   );

@@ -21,18 +21,61 @@ export type AppShellRoute = {
   /** URL segment under the app shell (`/` parent), e.g. `dashboard` → `/dashboard` */
   path: string;
   navLabel: string;
+  description: string;
   icon: LucideIcon;
   Component: ComponentType;
 };
 
 export const APP_SHELL_ROUTES: AppShellRoute[] = [
-  { path: 'dashboard', navLabel: 'Dashboard', icon: LayoutDashboard, Component: Dashboard },
-  { path: 'customers', navLabel: 'Sellers', icon: UserRound, Component: Customers },
-  { path: 'buyers', navLabel: 'Buyers', icon: Store, Component: Buyers },
-  { path: 'products', navLabel: 'Products', icon: Package, Component: Products },
-  { path: 'purchases', navLabel: 'Purchases', icon: TrendingDown, Component: Purchases },
-  { path: 'sales', navLabel: 'Sales', icon: TrendingUp, Component: Sales },
-  { path: 'profile', navLabel: 'Profile', icon: User, Component: Profile },
+  {
+    path: 'dashboard',
+    navLabel: 'Dashboard',
+    description: 'Revenue, costs, and recent activity at a glance.',
+    icon: LayoutDashboard,
+    Component: Dashboard,
+  },
+  {
+    path: 'customers',
+    navLabel: 'Sellers',
+    description: 'People you buy test strips from — online or in person.',
+    icon: UserRound,
+    Component: Customers,
+  },
+  {
+    path: 'buyers',
+    navLabel: 'Buyers',
+    description: 'Resale partners, price sheets, and preferred buyers.',
+    icon: Store,
+    Component: Buyers,
+  },
+  {
+    path: 'products',
+    navLabel: 'Products',
+    description: 'SKU catalog, buyer price grid, tiers, and margin suggestions.',
+    icon: Package,
+    Component: Products,
+  },
+  {
+    path: 'purchases',
+    navLabel: 'Purchases',
+    description: 'Log buys from sellers with line items and running totals.',
+    icon: TrendingDown,
+    Component: Purchases,
+  },
+  {
+    path: 'sales',
+    navLabel: 'Sales',
+    description: 'Record sales to buyers and keep history in one place.',
+    icon: TrendingUp,
+    Component: Sales,
+  },
+  {
+    path: 'profile',
+    navLabel: 'Profile',
+    description: 'Your business info and local data backup.',
+    icon: User,
+    Component: Profile,
+  },
 ];
 
 export function appShellHref(segment: string) {
