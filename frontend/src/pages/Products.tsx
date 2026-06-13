@@ -3,6 +3,7 @@ import { SK, loadCategoriesOrSeed, loadBuyersOrSeed, saveJson } from '../lib/loc
 import { SEED_CATEGORIES } from '../lib/seedCategoriesData';
 import { ChevronDown, ChevronRight, AlertCircle, TrendingUp, DollarSign, Settings } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
+import ProductsSheetPanel from '../components/ProductsSheetPanel';
 import ListSkeleton from '../components/ListSkeleton';
 import { useConfirm } from '../context/ConfirmContext';
 import { useToast } from '../context/ToastContext';
@@ -140,6 +141,21 @@ export default function Products() {
     setCategories(next);
     if (next[0]?.id) setExpandedCategories(new Set([next[0].id]));
     showToast('Default catalog loaded');
+  };
+
+  const handleSheetSyncComplete = async (next: any[], summary: string) => {
+    const ok = await confirm({
+      title: 'Apply sheet prices',
+      message: `${summary} Update your in-browser catalog?`,
+      confirmLabel: 'Apply',
+    });
+    if (!ok) return;
+    if (!saveJson(SK.categories, next)) {
+      showToast('Could not save — browser storage may be full.');
+      return;
+    }
+    setCategories(next);
+    showToast('Catalog updated from spreadsheet.');
   };
 
   const toggleCategory = (categoryId: string) => {
@@ -406,6 +422,12 @@ export default function Products() {
             </button>
           </>
         }
+      />
+
+      <ProductsSheetPanel
+        categories={categories}
+        onImportComplete={handleSheetSyncComplete}
+        onError={(message) => showToast(message)}
       />
 
       {isSmallScreen && displayBuyers.length > 2 && (
