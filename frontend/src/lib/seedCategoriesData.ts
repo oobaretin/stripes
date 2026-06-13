@@ -3,6 +3,7 @@
  * Northeast Medical Exchange SKU list for the in-browser product catalog.
  */
 import { NORTHEAST_CATALOG } from './northeastCatalogRaw';
+import { resolveShippingProfileId } from './productShipping';
 import { SEED_BUYERS } from './seedBuyersData';
 
 function slug(parts: string[]) {
@@ -92,6 +93,7 @@ export function buildSeedCategories(): any[] {
               imageUrl: null as string | null,
               isActive: true,
               specialNotes: prod.specialNotes,
+              shippingProfileId: resolveShippingProfileId(cat.name, sub.name, prod.name),
               buyerPrices: buildBuyerPricesForProduct(prodId, cat, prod),
             };
           }),

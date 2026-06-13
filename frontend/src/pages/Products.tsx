@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { SK, loadCategoriesOrSeed, loadBuyersOrSeed, saveJson } from '../lib/localData';
 import { SEED_CATEGORIES } from '../lib/seedCategoriesData';
-import { ChevronDown, ChevronRight, AlertCircle, TrendingUp, DollarSign, Settings } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertCircle, TrendingUp, DollarSign, Settings, Package, Truck } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import ProductsSheetPanel from '../components/ProductsSheetPanel';
+import ShippingSuppliesPanel from '../components/ShippingSuppliesPanel';
+import ProductShippingGuide from '../components/ProductShippingGuide';
+import { getShippingProfile, resolveShippingProfileId, shippingBadgeClass } from '../lib/productShipping';
 import ListSkeleton from '../components/ListSkeleton';
 import { useConfirm } from '../context/ConfirmContext';
 import { useToast } from '../context/ToastContext';
@@ -42,6 +45,7 @@ export default function Products() {
     return !window.matchMedia('(max-width: 639px)').matches;
   });
   const [openInfoKey, setOpenInfoKey] = useState<string | null>(null);
+  const [shippingDetailKey, setShippingDetailKey] = useState<string | null>(null);
 
   const displayBuyers = useMemo(() => {
     const active = buyers.filter((b) => b?.isActive !== false);
@@ -105,6 +109,20 @@ export default function Products() {
   }, [buyers]);
 
   const displayCategories = useMemo(() => categories, [categories]);
+
+  const catalogStats = useMemo(() => {
+    let productCount = 0;
+    for (const cat of categories) {
+      for (const sub of cat.subCategories || []) {
+        productCount += sub.products?.length || 0;
+      }
+    }
+    return {
+      productCount,
+      categoryCount: categories.length,
+      buyerCount: displayBuyers.length,
+    };
+  }, [categories, displayBuyers.length]);
 
   const loadData = () => {
     setError(null);
@@ -403,7 +421,7 @@ export default function Products() {
   return (
     <div>
       <PageHeader
-        description="Full Northeast-style catalog: NDC-level SKUs, expiration tiers (R1/R2), ding adjustments, and special buyer notes."
+        description="SKU catalog with buyer price grids, spreadsheet import, and outbound shipping guides (small / medium / large) mapped to Uline-style insulated supplies."
         actions={
           <>
             <button
@@ -429,6 +447,31 @@ export default function Products() {
         onImportComplete={handleSheetSyncComplete}
         onError={(message) => showToast(message)}
       />
+
+      <ShippingSuppliesPanel />
+
+      {catalogStats.productCount > 0 && (
+        <div className="mb-6 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Products</p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">{catalogStats.productCount}</p>
+            <p className="text-xs text-slate-600">{catalogStats.categoryCount} categories</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Buyers shown</p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">{catalogStats.buyerCount}</p>
+            <p className="text-xs text-slate-600">Price columns in grid</p>
+          </div>
+          <div className="rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white px-4 py-3 shadow-sm">
+            <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-sky-800">
+              <Truck className="h-3.5 w-3.5" aria-hidden />
+              Shipping
+            </p>
+            <p className="mt-1 text-sm font-semibold text-sky-950">Per-product packing guide</p>
+            <p className="text-xs text-sky-800/80">Insulated kits, mailers & cold packs by quantity tier</p>
+          </div>
+        </div>
+      )}
 
       {isSmallScreen && displayBuyers.length > 2 && (
         <div className="sticky top-14 z-30 -mx-4 mb-4 flex items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 py-2 backdrop-blur sm:-mx-6 lg:hidden">
@@ -570,6 +613,9 @@ export default function Products() {
               const range2Label = firstPrice?.expirationRange2Label || category.expirationRange2Label || '';
               const range3Label = firstPrice?.expirationRange3Label || '';
               const range4Label = firstPrice?.expirationRange4Label || '';
+              const categoryShipping = getShippingProfile(
+                resolveShippingProfileId(category.name, category.subCategories?.[0]?.name || '', '')
+              );
 
               return (
                 <div key={category.id} className="border-b border-gray-200">
@@ -597,6 +643,14 @@ export default function Products() {
                             {range4Label && <span>Range 4: {range4Label}</span>}
                           </div>
                         )}
+                        <div className="mt-2">
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ring-inset ${shippingBadgeClass(categoryShipping.badge)}`}
+                          >
+                            <Package className="h-3 w-3" aria-hidden />
+                            Ship: {categoryShipping.label} · {categoryShipping.badge}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -690,6 +744,12 @@ export default function Products() {
                                             </span>
                                           </div>
                                         </th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-sky-50 min-w-[100px]">
+                                          <div className="flex items-center gap-1">
+                                            <Truck className="h-3.5 w-3.5 text-sky-600" />
+                                            <span className="font-semibold">Ship</span>
+                                          </div>
+                                        </th>
                                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                                           Notes
                                         </th>
@@ -698,9 +758,18 @@ export default function Products() {
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
                                       {subCategory.products.map((product: any) => {
+                                        const profileId =
+                                          product.shippingProfileId ||
+                                          resolveShippingProfileId(category.name, subCategory.name, product.name);
+                                        const shipProfile = getShippingProfile(profileId);
+                                        const shipKey = `ship:${product.id}`;
+                                        const shipOpen = shippingDetailKey === shipKey;
+                                        const colSpan =
+                                          3 + visibleBuyers.length + 2;
 
                                         return (
-                                          <tr key={product.id} className="hover:bg-gray-50">
+                                          <Fragment key={product.id}>
+                                          <tr className="hover:bg-gray-50">
                                             <td className="px-4 py-3">
                                               <div className="text-sm font-medium text-gray-900">
                                                 {product.name}
@@ -732,8 +801,7 @@ export default function Products() {
                                                 return (
                                                   <div className="flex flex-col space-y-2">
                                                     {recommendations.map((rec, idx) => {
-                                                      const bestPrice = getBestBuyerPrice(product, rec.expirationRange as 'range1' | 'range2');
-                                                      const isBest = idx === 0; // First recommendation is usually the best
+                                                      const isBest = idx === 0;
                                                       
                                                       return (
                                                         <div
@@ -778,6 +846,26 @@ export default function Products() {
                                                 );
                                               })()}
                                             </td>
+                                            <td className="px-4 py-3 bg-sky-50/50 align-top">
+                                              <button
+                                                type="button"
+                                                onClick={() => setShippingDetailKey((k) => (k === shipKey ? null : shipKey))}
+                                                className={`inline-flex flex-col items-start rounded-lg border px-2.5 py-2 text-left transition-colors ${
+                                                  shipOpen
+                                                    ? 'border-sky-300 bg-white shadow-sm'
+                                                    : 'border-sky-100 bg-white/80 hover:border-sky-200'
+                                                }`}
+                                              >
+                                                <span
+                                                  className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ring-1 ring-inset ${shippingBadgeClass(shipProfile.badge)}`}
+                                                >
+                                                  {shipProfile.badge}
+                                                </span>
+                                                <span className="mt-1 text-xs font-medium text-slate-800">
+                                                  {shipOpen ? 'Hide guide' : 'Pack guide'}
+                                                </span>
+                                              </button>
+                                            </td>
                                             <td className="px-4 py-3 hidden sm:table-cell">
                                               {product.specialNotes ? (
                                                 <div className="flex items-center">
@@ -791,6 +879,14 @@ export default function Products() {
                                               )}
                                             </td>
                                           </tr>
+                                          {shipOpen && (
+                                            <tr className="bg-sky-50/30">
+                                              <td colSpan={colSpan} className="px-4 py-4 sm:px-8">
+                                                <ProductShippingGuide profileId={profileId} />
+                                              </td>
+                                            </tr>
+                                          )}
+                                          </Fragment>
                                         );
                                       })}
                                     </tbody>
